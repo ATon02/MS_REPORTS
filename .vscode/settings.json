@@ -1,0 +1,15 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+  "java.compile.nullAnalysis.mode": "automatic",
+  "java.debug.settings.onBuildFailureProceed": true,
+
+  "java.test.config": [
+    {
+      "name": "Test with JVM args",
+      "workingDirectory": "${workspaceFolder}",
+      "args": [],
+      "vmArgs": ["-XX:+AllowRedefinitionToAddDeleteMethods"]
+    }
+  ],
+  "java.test.defaultConfig": "Test with JVM args"
+}
