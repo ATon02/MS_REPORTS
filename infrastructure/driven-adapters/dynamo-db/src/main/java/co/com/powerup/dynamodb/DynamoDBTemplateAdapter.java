@@ -48,7 +48,9 @@ public class DynamoDBTemplateAdapter extends TemplateAdapterOperations<ReportTot
 
     @Override
     public Mono<ReportTotalizedRequests> save(ReportTotalizedRequests reportTotalizedRequests) {
-        log.info("➡️ Entró al repository save() de ReportTotalizedRequestsRepository");
-        return Mono.just(reportTotalizedRequests);
+        log.info("Intentando guardar ReportTotalizedRequests generado por: {}", reportTotalizedRequests.getUserGenerated());
+        return super.save(reportTotalizedRequests)
+                .doOnSuccess(saved -> log.info("Guardado exitoso en DynamoDB"))
+                .doOnError(error -> log.error("Error al guardar en DynamoDB: {}", error.getMessage(), error));
     }
 }

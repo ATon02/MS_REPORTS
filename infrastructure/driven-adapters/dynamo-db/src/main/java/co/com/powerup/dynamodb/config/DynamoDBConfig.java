@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
@@ -33,15 +34,27 @@ public class DynamoDBConfig {
                 .build();
     }
 
+    @SuppressWarnings("deprecation")
     @Bean
     @Profile({"dev", "cer", "pdn"})
-    public DynamoDbAsyncClient amazonDynamoDBAsync(MetricPublisher publisher, @Value("${aws.dynamodb.region}") String region) {
+    public DynamoDbAsyncClient amazonDynamoDBAsync(MetricPublisher publisher,@Value("${aws.dynamodb.region}") String region,
+                                        @Value("${aws.dynamodb.endpoint}") String endpoint) {
         return DynamoDbAsyncClient.builder()
-                .credentialsProvider(WebIdentityTokenFileCredentialsProvider.create())
+                .credentialsProvider(DefaultCredentialsProvider.create())
                 .region(Region.of(region))
+                .endpointOverride(URI.create(endpoint))
                 .overrideConfiguration(o -> o.addMetricPublisher(publisher))
                 .build();
     }
+
+    // @Bean
+    // public DynamoDbAsyncClient amazonDynamoDBAsync(MetricPublisher publisher, @Value("${aws.dynamodb.region}") String region) {
+    //     return DynamoDbAsyncClient.builder()
+    //             .credentialsProvider(WebIdentityTokenFileCredentialsProvider.create())
+    //             .region(Region.of(region))
+    //             .overrideConfiguration(o -> o.addMetricPublisher(publisher))
+    //             .build();
+    // }
 
     @Bean
     @Profile("!local & !dev & !cer & !pdn")
