@@ -6,9 +6,12 @@ import org.springframework.stereotype.Component;
 import co.com.powerup.model.totalizedrequests.TotalizedRequests;
 import co.com.powerup.model.totalizedrequests.enums.TypeTotal;
 import co.com.powerup.model.totalizedrequests.gateways.TotalizedRequestsRepository;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Component
 public class RequestIntercomRestAdapter implements TotalizedRequestsRepository {
 
@@ -28,7 +31,11 @@ public class RequestIntercomRestAdapter implements TotalizedRequestsRepository {
                                              .build())
                 .header("Authorization", authorization)
                 .retrieve()
-                .bodyToMono(TotalizedRequests.class);
+                .bodyToMono(TotalizedRequests.class)
+                .onErrorResume(e -> {
+                    log.error("Error al invocar getTotalizedRequests: {}", e.getMessage());
+                    return Mono.empty();
+                });
     }
 
 }

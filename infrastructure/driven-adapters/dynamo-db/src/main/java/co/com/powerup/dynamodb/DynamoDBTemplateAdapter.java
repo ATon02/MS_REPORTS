@@ -7,6 +7,7 @@ import co.com.powerup.model.reporttotalizedrequests.gateways.ReportTotalizedRequ
 import lombok.extern.slf4j.Slf4j;
 
 import org.reactivecommons.utils.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedAsyncClient;
@@ -18,25 +19,22 @@ import java.util.List;
 
 @Slf4j
 @Repository
-public class DynamoDBTemplateAdapter extends TemplateAdapterOperations<ReportTotalizedRequests /*domain model*/, String, ReportTotalizedRequestsEntity /*adapter model*/> implements ReportTotalizedRequestsRepository/* implements Gateway from domain */ {
+public class DynamoDBTemplateAdapter extends TemplateAdapterOperations<ReportTotalizedRequests, String, ReportTotalizedRequestsEntity> implements ReportTotalizedRequestsRepository {
+    
 
-    public DynamoDBTemplateAdapter(DynamoDbEnhancedAsyncClient connectionFactory, ObjectMapper mapper) {
-        /**
-         *  Could be use mapper.mapBuilder if your domain model implement builder pattern
-         *  super(repository, mapper, d -> mapper.mapBuilder(d,ObjectModel.ObjectModelBuilder.class).build());
-         *  Or using mapper.map with the class of the object model
-         */
-        super(connectionFactory, mapper, d -> mapper.map(d, ReportTotalizedRequests.class /*domain model*/), "reports_totalized_requests","idx_emailUserGenerated" /*index is optional*/);
+    public DynamoDBTemplateAdapter(DynamoDbEnhancedAsyncClient connectionFactory, ObjectMapper mapper, 
+                @Value("${aws.dynamodb.tables.reports}") String tableNameReports) {
+        super(connectionFactory, mapper, d -> mapper.map(d, ReportTotalizedRequests.class), tableNameReports,"idx_emailUserGenerated");
     }
 
-    public Mono<List<ReportTotalizedRequests /*domain model*/>> getEntityBySomeKeys(String partitionKey, String sortKey) {
+    public Mono<List<ReportTotalizedRequests>> getEntityBySomeKeys(String partitionKey, String sortKey) {
         QueryEnhancedRequest queryExpression = generateQueryExpression(partitionKey, sortKey);
         return query(queryExpression);
     }
 
-    public Mono<List<ReportTotalizedRequests /*domain model*/>> getEntityBySomeKeysByIndex(String partitionKey, String sortKey) {
+    public Mono<List<ReportTotalizedRequests>> getEntityBySomeKeysByIndex(String partitionKey, String sortKey) {
         QueryEnhancedRequest queryExpression = generateQueryExpression(partitionKey, sortKey);
-        return queryByIndex(queryExpression, "idx_emailUserGenerated" /*index is optional if you define in constructor*/);
+        return queryByIndex(queryExpression, "idx_emailUserGenerated");
     }
 
     private QueryEnhancedRequest generateQueryExpression(String partitionKey, String sortKey) {

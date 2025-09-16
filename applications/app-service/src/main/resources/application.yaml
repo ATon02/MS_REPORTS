@@ -21,6 +21,8 @@ aws:
   dynamodb:
     endpoint: "${SPRING_DYNAMODB_ENDPOINT}"
     region: "${SPRING_DYNAMODB_REGION}"
+    tables:
+      reports: "${SPRING_DYNAMODB_TABLE_REPORTS}"
 management:
   endpoints:
     web:

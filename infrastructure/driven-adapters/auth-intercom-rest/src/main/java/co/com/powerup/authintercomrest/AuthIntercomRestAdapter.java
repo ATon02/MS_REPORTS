@@ -4,10 +4,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import co.com.powerup.model.userinfo.gateways.UserInfoRepository;
+import lombok.extern.slf4j.Slf4j;
 import co.com.powerup.model.userinfo.UserInfo;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @Component
 public class AuthIntercomRestAdapter implements UserInfoRepository {
 
@@ -25,6 +27,10 @@ public class AuthIntercomRestAdapter implements UserInfoRepository {
                                              .build())
                 .header("Authorization", authorization)
                 .retrieve()
-                .bodyToMono(UserInfo.class);
+                .bodyToMono(UserInfo.class)
+                .onErrorResume(e -> {
+                    log.error("Error al invocar selfSearch: {}", e.getMessage());
+                    return Mono.empty();
+                });
     }
 }
