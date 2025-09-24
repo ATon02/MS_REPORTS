@@ -1,5 +1,7 @@
 package co.com.powerup.requestintercomrest;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +18,8 @@ import reactor.core.publisher.Mono;
 public class RequestIntercomRestAdapter implements TotalizedRequestsRepository {
 
     private final WebClient webClient;
+    @Value("${SPRING_INTERNAL_JOB_TOKEN_REQUEST}")
+    private String internalJobTokenRequest;
 
     public RequestIntercomRestAdapter(WebClient.Builder builder,
                                    @Value("${spring.intercom.requests.host}") String authHost) {
@@ -35,6 +39,22 @@ public class RequestIntercomRestAdapter implements TotalizedRequestsRepository {
                 .onErrorResume(e -> {
                     log.error("Error al invocar getTotalizedRequests: {}", e.getMessage());
                     return Mono.empty();
+                });
+    }
+
+    @Override
+    public Mono<List<TotalizedRequests>> totalsByStatus(Long statusId) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/api/v1/request/totals/internal")
+                                            .queryParam("statusId", statusId)
+                                            .build())
+                .header("X-Job-Token", internalJobTokenRequest)
+                .retrieve()
+                .bodyToFlux(TotalizedRequests.class)
+                .collectList()
+                .onErrorResume(e -> {
+                    log.error("Error al invocar totalsByStatus: {}", e.getMessage());
+                    return Mono.just(List.of());
                 });
     }
 

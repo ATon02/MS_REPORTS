@@ -1,6 +1,8 @@
 apply plugin: 'org.springframework.boot'
 
 dependencies {
+	implementation project(':aws-ses')
+	implementation project(':sqs-listener')
 	implementation project(':auth-intercom-rest')
 	implementation project(':request-intercom-rest')
 	implementation project(':reactive-web')

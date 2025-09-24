@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import co.com.powerup.model.emailnotification.gateways.EmailNotificationRepository;
 import co.com.powerup.model.reporttotalizedrequests.ReportTotalizedRequests;
 import co.com.powerup.model.reporttotalizedrequests.gateways.ReportTotalizedRequestsRepository;
 import co.com.powerup.model.totalizedrequests.TotalizedRequests;
@@ -21,6 +22,13 @@ import reactor.test.StepVerifier;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+import reactor.core.publisher.Flux;
+import org.mockito.Mockito;
+import org.mockito.ArgumentCaptor;
+import static org.junit.jupiter.api.Assertions.*;
+
+
 @ExtendWith(MockitoExtension.class)
 public class ReportTotalizedRequestsUseCaseTest {
 
@@ -30,6 +38,8 @@ public class ReportTotalizedRequestsUseCaseTest {
     private UserInfoRepository userInfoRepository;
     @Mock
     private ReportTotalizedRequestsRepository reportTotalizedRequestsRepository;
+    @Mock    
+    private EmailNotificationRepository emailNotificationRepository;
 
     @InjectMocks
     private ReportTotalizedRequestsUseCase reportTotalizedRequestsUseCase;
@@ -108,4 +118,79 @@ public class ReportTotalizedRequestsUseCaseTest {
                                 .equals("Información del usuario no encontrada en servicioo de Autenticacion"))
                 .verify();
     }
+
+    @Test
+    void sendReportEmail_usersAndTotals_emailsSentWithCorrectBody() {
+        UserInfo user = new UserInfo();
+        user.setEmail("user@test.com");
+        user.setName("User");
+
+        TotalizedRequests total1 = new TotalizedRequests();
+        total1.setType("APPROVED_REQUESTS");
+        total1.setValue(3.0);
+
+        TotalizedRequests total2 = new TotalizedRequests();
+        total2.setType("APPROVED_AMOUNT");
+        total2.setValue(1500.0);
+
+        Mockito.when(userInfoRepository.findByRole(1L)).thenReturn(Flux.just(user));
+        Mockito.when(totalizedRequestsRepository.totalsByStatus(2L))
+            .thenReturn(Mono.just(List.of(total1, total2)));
+        Mockito.when(emailNotificationRepository.sendEmail(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+            .thenReturn(Mono.empty());
+
+        Mono<Void> result = reportTotalizedRequestsUseCase.sendReportEmail();
+
+        StepVerifier.create(result).verifyComplete();
+
+        ArgumentCaptor<String> emailCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+
+        Mockito.verify(emailNotificationRepository).sendEmail(
+                emailCaptor.capture(),
+                subjectCaptor.capture(),
+                bodyCaptor.capture()
+        );
+
+        assertEquals("user@test.com", emailCaptor.getValue());
+        assertEquals("REPORTE DIARIO DE SOLICITUDES APROBADAS", subjectCaptor.getValue());
+        String body = bodyCaptor.getValue();
+        assertTrue(body.contains("Al dia de hoy se tiene los siguientes datos:"));
+        assertTrue(body.contains("- Un total de: 3 Solicitudes aprobadas"));
+
+    }
+
+    @Test
+    void sendReportEmail_noUsers_noEmailsSent() {
+        Mockito.when(userInfoRepository.findByRole(1L)).thenReturn(Flux.empty());
+        Mockito.when(totalizedRequestsRepository.totalsByStatus(2L)).thenReturn(Mono.just(List.of()));
+
+        Mono<Void> result = reportTotalizedRequestsUseCase.sendReportEmail();
+
+        StepVerifier.create(result).verifyComplete();
+
+        Mockito.verify(emailNotificationRepository, Mockito.never())
+            .sendEmail(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+    }
+
+    @Test
+    void sendReportEmail_noTotals_sendsEmailWithEmptyTotals() {
+        UserInfo user = new UserInfo();
+        user.setEmail("user@test.com");
+        user.setName("User");
+
+        Mockito.when(userInfoRepository.findByRole(1L)).thenReturn(Flux.just(user));
+        Mockito.when(totalizedRequestsRepository.totalsByStatus(2L)).thenReturn(Mono.just(List.of()));
+        Mockito.when(emailNotificationRepository.sendEmail(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+            .thenReturn(Mono.empty());
+
+        Mono<Void> result = reportTotalizedRequestsUseCase.sendReportEmail();
+
+        StepVerifier.create(result).verifyComplete();
+
+        Mockito.verify(emailNotificationRepository, Mockito.times(1))
+            .sendEmail(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+    }
+
 }

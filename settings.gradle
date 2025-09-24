@@ -30,3 +30,7 @@ include ':request-intercom-rest'
 project(':request-intercom-rest').projectDir = file('./infrastructure/driven-adapters/request-intercom-rest')
 include ':auth-intercom-rest'
 project(':auth-intercom-rest').projectDir = file('./infrastructure/driven-adapters/auth-intercom-rest')
+include ':sqs-listener'
+project(':sqs-listener').projectDir = file('./infrastructure/entry-points/sqs-listener')
+include ':aws-ses'
+project(':aws-ses').projectDir = file('./infrastructure/driven-adapters/aws-ses')

@@ -7,5 +7,5 @@ import reactor.core.publisher.Mono;
 public interface IReportTotalizedRequestsUseCase {
 
     Mono<ReportTotalizedRequests> generatedReport(TypeTotal typeTotal, Long statusId, String authorization);
-
+    Mono<Void> sendReportEmail();
 }
