@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk-alpine
+FROM openjdk:17-alpine
 RUN addgroup -S appuser && adduser -S appuser -G appuser
 VOLUME /tmp
 COPY applications/app-service/build/libs/*.jar  Reports.jar
